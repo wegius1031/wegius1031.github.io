@@ -6,11 +6,11 @@
 
 1. 打开已有项目 https://supabase.com/dashboard/project/scaccfuchbjbnqnrlcub 。
 2. 在项目的 SQL Editor 执行同目录的 `001_zhoujian.sql`。首次运行前检查脚本，使用新项目可避免与已有表冲突。
-3. 在 Authentication 的用户列表中创建你自己的登录用户；当前应用仅向已有用户发送登录邮件，不开放自助注册。无需把登录密码提供给网站作者。
+3. 在 Authentication 的用户列表中创建你自己的登录用户；应用使用邮箱和密码登录，不开放自助注册。创建用户时设置密码并确认邮箱；已有用户应为原账号设置密码，不要创建重复账号。无需把登录密码提供给网站作者。
 4. 在 Authentication 的 URL 配置中将 Site URL 设置为 `https://wegius1031.github.io/finance/`，并把该网址加入允许的 Redirect URLs。
 5. `finance/config.js` 已填入你提供的 Project URL 和公开 Publishable key。不要使用 `sb_secret_`、`service_role` 或数据库密码。
 6. 合并网站代码，让 GitHub Pages 发布 `/finance/` 目录。
-7. 用手机打开页面，输入自己的邮箱，打开同一设备上收到的登录链接。创建一笔测试记录，再用电脑登录同一邮箱验证同步。
+7. 用手机打开页面，输入自己的邮箱和密码登录。创建一笔测试记录，再用电脑登录同一邮箱验证同步。
 
 Project URL 和公开密钥已配置。2026-10-09 的真实接口检查返回 PGRST205：schema cache 中尚无 zhoujian_ledgers 表。SQL 尚待在控制台执行，随后需验证数据库权限、跨设备读写、冲突处理及手机浏览器行为。
 

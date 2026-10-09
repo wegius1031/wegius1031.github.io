@@ -18,6 +18,17 @@ async function initAuth(){
   window.zhoujianSupabase=supabaseClient;
   const {data,error}=await supabaseClient.auth.getSession();if(error){authNotice('登录状态读取失败，请重试');return}if(data.session)await startWallet(data.session);
   supabaseClient.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session)setTimeout(()=>void startWallet(session),0);if(event==='SIGNED_OUT')location.reload()});
-  document.getElementById('login-form').onsubmit=async e=>{e.preventDefault();const email=document.getElementById('email').value.trim(),button=document.getElementById('send-link');button.disabled=true;authNotice('正在发送登录邮件…');try{const {error}=await supabaseClient.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname,shouldCreateUser:false}});authNotice(error?'登录邮件发送失败。请确认该邮箱已添加到 Supabase 用户列表，并稍后重试。':'登录邮件已发送，请在当前设备打开邮件里的链接。')}catch{authNotice('网络连接失败，请重试')}finally{button.disabled=false}};
+  document.getElementById('login-form').onsubmit=async e=>{
+    e.preventDefault();
+    const email=document.getElementById('email').value.trim(),passwordInput=document.getElementById('password'),button=document.getElementById('sign-in');
+    if(button.disabled)return;
+    button.disabled=true;authNotice('正在登录…');
+    try{
+      const {data,error}=await supabaseClient.auth.signInWithPassword({email,password:passwordInput.value});
+      if(error){authNotice(error.code==='email_not_confirmed'?'该邮箱尚未确认，请先完成首次邮箱确认。':'登录失败，请检查邮箱和密码；若尚未设置密码，请先为原账号设置密码。');return}
+      if(!data.session){authNotice('未取得登录状态，请重试');return}
+      passwordInput.value='';authNotice('登录成功，正在打开账本…');await startWallet(data.session);
+    }catch{authNotice('网络连接失败，请重试')}finally{button.disabled=false}
+  };
 }
 void initAuth().catch(()=>authNotice('连接失败，请检查网络后刷新页面'));
