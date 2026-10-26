@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
+<title>Codex 用量 · 太阳热冰</title>
+<style>
+:root{color-scheme:dark;--bg:#101814;--panel:#1a251e;--muted:#a7baab;--ink:#edf5ec;--green:#b3ed94;--line:#334638}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif}main{max-width:860px;margin:auto;padding:32px 22px 80px}
+nav{display:flex;justify-content:space-between;gap:16px;font-size:14px}a{color:var(--muted)}header{padding:55px 0 25px}h1{font-size:clamp(32px,7vw,52px);line-height:1.15;letter-spacing:-2px;margin:12px 0}h2{font-size:21px;margin:0 0 16px}
+p{margin:10px 0}.eyebrow{color:var(--green);letter-spacing:3px;font-size:12px}.muted{color:var(--muted)}.panel{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px;margin-top:20px}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.row input{flex:1;min-width:180px}
+label{display:block;margin-bottom:8px}input,button{font:inherit;border-radius:10px;padding:12px 16px;border:1px solid var(--line)}
+input{background:#101814;color:var(--ink);width:100%;min-width:0}button{background:var(--green);color:#172116;cursor:pointer;font-weight:650}button:disabled{opacity:.5;cursor:wait}
+button.secondary{background:transparent;color:var(--ink)}button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+#status{min-height:28px;margin-top:16px}#status.error{color:#ffb4a8}.pill{border:1px solid var(--line);border-radius:30px;padding:4px 12px;font-size:13px}.old{color:#ffd494!important}
+#cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px}.card{border-top:1px solid var(--line);padding-top:18px}.number{font-size:48px;line-height:1.3;font-weight:650;letter-spacing:-2px}
+meter{width:100%;height:13px;accent-color:var(--green)}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:14px;color:var(--muted);line-height:1.8}
+details{margin-top:26px}summary{cursor:pointer;font-weight:600}code{overflow-wrap:anywhere;color:var(--green);font-size:13px}li{margin:12px 0}footer{font-size:12px;margin-top:28px;color:var(--muted)}
+[hidden]{display:none!important}@media(max-width:480px){main{padding:24px 16px 50px}.panel{padding:20px}header{padding-top:38px}.row button{flex:1}}
+</style>
+</head>
+<body><main>
+<nav><a href="/">← 太阳热冰の博客</a><span class="muted">私人用量面板</span></nav>
+<header><span class="eyebrow">CODEX / USAGE</span><h1>用量，一眼可见。</h1><p class="muted">查看电脑同步的最新快照，在手机与 Apple Watch 上随时查询。</p></header>
+<section class="panel">
+<form id="form"><label for="key">查询密钥</label><div class="row"><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="输入本机配置中的 64 位查询密钥" required minlength="64" maxlength="64"><button id="load" type="submit">查看用量</button></div></form>
+<p class="muted" style="font-size:13px">密钥仅在本页内存中使用，刷新或关闭页面后需重新输入。</p>
+<div id="status" role="status" aria-live="polite">等待查询。密钥来自电脑上的「远程快捷指令配置.txt」。</div>
+</section>
+<section id="result" class="panel" hidden>
+<div class="row" style="justify-content:space-between;margin-bottom:20px"><h2 style="margin:0">额度概览</h2><span id="fresh" class="pill"></span></div>
+<div id="cards"></div><p id="time" class="muted" style="font-size:13px"></p>
+<pre id="text"></pre><div class="row"><button id="refresh" type="button">刷新快照</button><button id="forget" class="secondary" type="button">清除本页数据</button></div>
+<p class="muted" style="font-size:12px">电脑每 5 分钟同步一次。刷新只读取云端快照；超过 10 分钟未更新时显示旧数据。Token 活动统计不等同于订阅剩余额度。</p>
+</section>
+<details class="panel"><summary>配置 iPhone / Apple Watch 快捷指令</summary>
+<ol>
+<li>添加「URL」，填写：<br><code id="endpoint"></code></li>
+<li>添加「获取 URL 内容」，方法选 <b>POST</b>。请求头 <code>apikey</code> 填写：<br><code id="publickey"></code><br>另加请求头 <code>Content-Type</code>，值为 <code>application/json</code>。</li>
+<li>请求体选择 <b>JSON</b>，新增文本字段 <code>p_key</code>，值为你的查询密钥。</li>
+<li>添加「获取字典值」，键为 <code>text</code>，输入选择上一步输出。再用「显示提醒」显示这个字典值。</li>
+<li>先用 iPhone 蜂窝网络测试，然后在快捷指令详情开启「在 Apple Watch 上显示」。</li>
+</ol><p class="muted">不需要填写 ChatGPT 登录凭证。电脑关机或同步停止后，只能查询最后一次快照。</p>
+</details>
+<footer>个人工具 · 非 OpenAI 官方产品 · 数据保存在你的 Supabase 项目中</footer>
+</main>
+<script>
+'use strict';
+const BASE='https://scaccfuchbjbnqnrlcub.supabase.co';
+const APIKEY='sb_publishable_pJYSEEPT1Kj326j_3T2MmA_GMNyEO1T';
+const endpoint=BASE+'/rest/v1/rpc/codex_watch_read';
+const el=id=>document.getElementById(id);
+el('endpoint').textContent=endpoint;el('publickey').textContent=APIKEY;
+let last=null,clockOffset=0,busy=false;
+function notice(message,error=false){el('status').textContent=message;el('status').className=error?'error':'';}
+function clearData(){last=null;el('result').hidden=true;el('cards').replaceChildren();el('text').textContent='';}
+function freshness(){
+ if(!last)return;
+ const stamp=Date.parse(last.snapshot.fetchedAt),age=Date.now()+clockOffset-stamp;
+ const stale=last.stale||!Number.isFinite(age)||age>600000;
+ el('fresh').textContent=stale?'旧数据 · 待电脑同步':'最近 10 分钟内更新';
+ el('fresh').className=stale?'pill old':'pill';
+ el('time').textContent='数据时间：'+new Date(stamp).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai',hour12:false})+'（北京时间）';
+ el('text').textContent=(stale&&!last.stale?'【旧数据：超过 10 分钟未更新】\n':'')+last.text;
+}
+function show(data){
+ clearData();
+ if(!data.ok){notice(data.text||'尚未收到电脑上传，请启动同步程序。');return;}
+ if(!data.snapshot||!Array.isArray(data.snapshot.windows)||!Number.isFinite(Date.parse(data.snapshot.fetchedAt)))throw Error('服务器返回的数据格式不正确。');
+ last=data;clockOffset=Date.parse(data.serverTime)-Date.now();
+ if(!Number.isFinite(clockOffset))clockOffset=0;
+ for(const w of data.snapshot.windows.slice(0,6)){
+  const card=document.createElement('div');card.className='card';
+  const label=document.createElement('div');label.className='muted';
+  const m=w.windowDurationMins;
+  label.textContent=(w.limitId==='codex'?'':w.limitId+' · ')+(m?m%1440===0?m/1440+' 天':m%60===0?m/60+' 小时':m+' 分钟':'未知周期');
+  const value=document.createElement('div');value.className='number';
+  const n=w.remainingPercent;
+  value.textContent=typeof n==='number'&&Number.isFinite(n)?Math.max(0,Math.min(100,n))+'%':'未知';
+  const subtitle=document.createElement('div');subtitle.textContent='剩余额度';subtitle.className='muted';
+  card.append(label,value,subtitle);
+  if(typeof n==='number'&&Number.isFinite(n)){const meter=document.createElement('meter');meter.min=0;meter.max=100;meter.value=n;meter.setAttribute('aria-label','剩余额度百分比');card.append(meter);}
+  el('cards').append(card);
+ }
+ el('result').hidden=false;freshness();notice('已读取云端快照。');
+}
+async function load(){
+ if(busy)return;
+ const key=el('key').value.trim();
+ if(!/^[a-f0-9]{64}$/.test(key)){notice('请输入完整的 64 位查询密钥。',true);return;}
+ busy=true;el('load').disabled=true;el('refresh').disabled=true;notice('正在查询…');
+ try{
+  const res=await fetch(endpoint,{method:'POST',headers:{apikey:APIKEY,'Content-Type':'application/json'},body:JSON.stringify({p_key:key}),cache:'no-store',credentials:'omit',signal:AbortSignal.timeout(20000)});
+  if(!res.ok)throw Error(res.status===401?'查询密钥不正确。':res.status===404?'远程接口尚未安装，请先在 Supabase 执行安装 SQL。':'查询失败（HTTP '+res.status+'），请稍后重试。');
+  show(await res.json());
+ }catch(e){clearData();notice(e.name==='TimeoutError'?'连接超时，请检查网络后重试。':e.message==='Failed to fetch'?'无法连接云端，请检查网络或项目运行状态。':e.message,true);}
+ finally{busy=false;el('load').disabled=false;el('refresh').disabled=false;}
+}
+el('form').addEventListener('submit',e=>{e.preventDefault();void load();});
+el('refresh').addEventListener('click',()=>void load());
+el('forget').addEventListener('click',()=>{clearData();el('key').value='';notice('已清除本页密钥和用量。');});
+setInterval(freshness,30000);
+</script>
+</body></html>
