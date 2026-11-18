@@ -8,7 +8,7 @@ async function startWallet(session){
   document.getElementById('auth-panel').hidden=true;
   const root=document.getElementById('wallet-root');root.hidden=false;root.dataset.userId=session.user.id;
   if(root.dataset.started)return;root.dataset.started='true';
-  const script=document.createElement('script');script.src='./app.mjs?v=20261118b';script.type='module';script.onerror=()=>authNotice('记账页面加载失败，请刷新重试');document.body.appendChild(script);
+  const script=document.createElement('script');script.src='./app.mjs?v=20261118-funds1';script.type='module';script.onerror=()=>authNotice('记账页面加载失败，请刷新重试');document.body.appendChild(script);
 }
 async function initAuth(){
   if(!config.supabaseUrl||!config.publishableKey){authNotice('数据库尚未配置，当前页面不能保存账目。请先创建 Supabase 项目并填写 config.js。');document.querySelectorAll('#auth-panel input,#auth-panel button').forEach(el=>el.disabled=true);return}
